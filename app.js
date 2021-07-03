@@ -14,9 +14,29 @@ const answers = [
     'The user\'s account will be terminated and all purchases will be cancelled'
 ]
 
+const checkAdress = async (page, adress) => {
+    return await page.evaluate(async (adress) => {
+        if (document.location.href === adress) {
+            return true
+        } else {
+            return false
+        }
+    }, adress)
+}
+
+const checkPage = async (page, adress, selector, log) => {
+    if (await checkAdress(page, adress) === true) {
+        console.log(log) 
+        await Promise.all([
+            page.click(selector),
+            page.waitForNavigation({ waitUntil: 'domcontentloaded' })
+        ])
+    } 
+}
+
 const start = async () => {
-    const browser = await puppeteer.connect( {browserWSEndpoint: brEnsPoint} )
     console.log('create browser')
+    const browser = await puppeteer.connect( {browserWSEndpoint: brEnsPoint} )
 
     console.log('new page') 
     const page = await browser.newPage()
@@ -29,13 +49,13 @@ const start = async () => {
     console.log('cross to QREDO') 
     await Promise.all([
         page.goto('https://coinlist.co/qredo'),
-        page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+        page.waitForTimeout(1000)
     ]) 
 
     console.log('click REGISTER') 
     await Promise.all([
         page.click('#cover_top_content > div > div > div.s-grid.s-marginTop4.s-grid--bottom.u-textAlignCenter > div.index-deal_page_index-header__cta_section.s-grid--bottom.s-grid-colMd8.u-textAlignLeft > div > a'),
-        page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+        page.waitForTimeout(1000)
     ]) 
 
     console.log('click REGISTER NOW') 
@@ -70,17 +90,19 @@ const start = async () => {
     console.log('Waiting for 15s...');
     await page.waitForTimeout(15000)
 
-    console.log('click GET STARTED') 
-    await Promise.all([
-        page.click('body > div.s-container.s-gridMaxXs24.layouts-shared-offering_flow > div > div > div.s-grid-colSm16 > div > div > a'),
-        page.waitForNavigation({ waitUntil: 'domcontentloaded' })
-    ])  
+    await checkPage(
+        page, 
+        'https://coinlist.co/qredo-option-1-sale/onboarding', 
+        'body > div.s-container.s-gridMaxXs24.layouts-shared-offering_flow > div > div > div.s-grid-colSm16 > div > div > a',
+        'click GET STARTED'
+    )
 
-    console.log('click CONTINUE WITH') 
-    await Promise.all([
-        page.click('body > div.s-container.s-gridMaxXs24.layouts-shared-offering_flow > div > div > div.s-grid-colSm16 > div > div > div.js-existing_entity > a'),
-        page.waitForNavigation({ waitUntil: 'domcontentloaded' })
-    ])  
+    await checkPage(
+        page, 
+        'https://coinlist.co/qredo-option-1-sale/new', 
+        'body > div.s-container.s-gridMaxXs24.layouts-shared-offering_flow > div > div > div.s-grid-colSm16 > div > div > div.js-existing_entity > a',
+        'click CONTINUE WITH'
+    )
 
     console.log('change SELECT')
     const selectElem = await page.$('#forms_offerings_participants_residence_residence_country')
