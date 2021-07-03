@@ -16,7 +16,7 @@ const answers = [
 
 const checkAdress = async (page, adress) => {
     return await page.evaluate(async (adress) => {
-        if (document.location.href === adress) {
+        if (document.location.href.match(adress)) {
             return true
         } else {
             return false
@@ -34,6 +34,21 @@ const checkPage = async (page, adress, selector, log) => {
     } 
 }
 
+const checkSelectPage = async (page, adress) => {
+    if (await checkAdress(page, adress) === true) {
+        console.log('change SELECT')
+        const selectElem = await page.$('#forms_offerings_participants_residence_residence_country')
+        await selectElem.type('RU')
+        await page.click('#new_forms_offerings_participants_residence > div:nth-child(7) > div > label')
+
+        console.log('click CONTINUE') 
+        await Promise.all([
+            page.click('#new_forms_offerings_participants_residence > div.s-marginTop2 > a'),
+            page.waitForNavigation({ waitUntil: 'domcontentloaded' })
+        ])
+    }
+}
+
 const start = async () => {
     console.log('create browser')
     const browser = await puppeteer.connect( {browserWSEndpoint: brEnsPoint} )
@@ -49,7 +64,7 @@ const start = async () => {
     console.log('cross to QREDO') 
     await Promise.all([
         page.goto('https://coinlist.co/qredo'),
-        page.waitForTimeout(1000)
+        page.waitForTimeout(10000)
     ]) 
 
     console.log('click REGISTER') 
@@ -65,15 +80,11 @@ const start = async () => {
     ])  
     
     console.log('cross to login')
-    console.log('Waiting for 7s...'); 
+    console.log('Waiting for 10s...'); 
     await Promise.all([
         page.click('#new_user > div > div.s-gridC-colSm24.u-text-center > a'),
-        page.waitForTimeout(7000)
+        page.waitForTimeout(10000)
     ])  
-    
-    // console.log('input DATA')     
-    // await page.type('#user_email', 'plyushchev-danila@mail.ru')
-    // await page.type('#user_password', 'oR6ZrQ6MPfA')
 
     console.log('click LOGIN') 
     await Promise.all([
@@ -92,28 +103,22 @@ const start = async () => {
 
     await checkPage(
         page, 
-        'https://coinlist.co/qredo-option-1-sale/onboarding', 
+        'onboarding', 
         'body > div.s-container.s-gridMaxXs24.layouts-shared-offering_flow > div > div > div.s-grid-colSm16 > div > div > a',
         'click GET STARTED'
     )
 
     await checkPage(
         page, 
-        'https://coinlist.co/qredo-option-1-sale/new', 
+        'new', 
         'body > div.s-container.s-gridMaxXs24.layouts-shared-offering_flow > div > div > div.s-grid-colSm16 > div > div > div.js-existing_entity > a',
         'click CONTINUE WITH'
     )
 
-    console.log('change SELECT')
-    const selectElem = await page.$('#forms_offerings_participants_residence_residence_country')
-    await selectElem.type('RU')
-    await page.click('#new_forms_offerings_participants_residence > div:nth-child(7) > div > label')
-
-    console.log('click CONTINUE') 
-    await Promise.all([
-        page.click('#new_forms_offerings_participants_residence > div.s-marginTop2 > a'),
-        page.waitForNavigation({ waitUntil: 'domcontentloaded' })
-    ])
+    await checkSelectPage(
+        page, 
+        'residence'
+    )
 
     console.log('select ANSWERS');
     await page.evaluate((answers) => {
@@ -125,7 +130,13 @@ const start = async () => {
 
     }, answers) 
 
-    console.log('FINISH');
+    // console.log('click FINISH') 
+    // await Promise.all([
+    //     page.click('body > div.s-container.s-gridMaxXs24.layouts-shared-offering_flow > div > div > div.s-grid-colSm16 > div > div > div.offerings-participants-quiz-form > form > div.s-marginTop2 > a'),
+    //     page.waitForNavigation({ waitUntil: 'domcontentloaded' })
+    // ])
+
+    
 }
 
 start() 
